@@ -1,111 +1,89 @@
-# Electronica Data Warehouse (ELECTRONICA_DW)
+# Electronica Data Warehouse – HybridJoin ETL Implementation (Java)
 
-This project implements a **near-real-time data warehouse** solution for the Electronica electronics retail chain. The system ingests transactional data, transforms and enriches it using the **HYBRIDJOIN** algorithm, and loads it into a **star-schema-based** MySQL data warehouse. It also supports complex OLAP analysis and materialized views for business intelligence.
-
----
-
-## 📦 Project Components
-
-### 1. Data Warehouse Schema
-
-- **Database:** `ELECTRONICA_DW`
-- **Tables:**
-  - **Dimensions:** `PRODUCTS`, `CUSTOMERS`, `SUPPLIERS`, `STORES`, `DATES`, `ORDERS`
-  - **Fact Table:** `FACTS` (central table joining dimensions and holding sales data)
-
-### 2. ETL Process (Java, Multi-threaded)
-
-- **Thread 1: `StreamGenerator`** – Generates a batch stream of transactional records.
-- **Thread 2: `HybridJoin`** – Enriches transactional data by joining it with master data using the HYBRIDJOIN algorithm.
-- **Thread 3: `Controller`** – Monitors ingestion and processing rates, controls flow speed.
-
-> The enriched data is inserted into the `FACTS` table with relevant foreign keys, while also updating dimensions.
+This project implements a **near-real-time ETL system** using Java for a simulated retail business chain, *Electronica*. The ETL system reads transactional data, enriches it using master data, and loads the output into a star-schema-based data warehouse (`ELECTRONICA_DW`) using the **HYBRIDJOIN** algorithm.
 
 ---
 
+## 📦 Project Overview
+
+### 🎯 Objective
+To simulate a real-time data warehousing pipeline using Java and MySQL that:
+
+1. Extracts transactional data from a staging table (`transactions`)
+2. Transforms it by enriching with master data (`masterdata`) using a **partition-based hybrid join**
+3. Loads the data into dimensional and fact tables under a **star schema**
+
+---
+
+## 🧠 Key Features
+
+### 🔁 HybridJoin Algorithm (Java)
+The program mimics near-real-time joining by:
+- Reading transactional data in **50-record chunks** into a queue.
+- Matching transactions to `productID` values from master data.
+- Calculating `SALE = Quantity × Price`
+- Inserting enriched data into:
+  - `CUSTOMERS`, `ORDERS`, `PRODUCTS`, `SUPPLIERS`, `DATES` tables (if new)
+  - `FACTS` table (fact table with foreign key references)
+
+### ⚙️ Multithread-Safe Structures Used
+- `ArrayBlockingQueue` for simulating streaming
+- `MultiValuedMap` from Apache Commons Collections for hash joins
+- Fallback handling if queue is full
 
 ---
 
 ## 🛠️ Setup Instructions
 
-### 1. Import Schema and Data
-
-- Create the `ELECTRONICA_DW` schema in MySQL.
-- Run the provided SQL script to create dimension and fact tables.
-- Load data from `transactions.csv` and `master_data.csv` into temporary tables (`TRANSACTIONDATA` and `MASTERDATA`).
-
-### 2. Run ETL
-
-- Run the Java ETL program (`ETL.java`) using Eclipse or IntelliJ.
-- On launch, it will:
-  - Ask for MySQL DB credentials.
-  - Load data from the source tables.
-  - Perform enrichment using `HYBRIDJOIN`.
-  - Insert enriched records into `FACTS`.
-
-> Ensure that all external libraries (e.g., Apache MultiHashMap) are added to your Java project.
+### 📌 Prerequisites
+- Java JDK 8 or above
+- MySQL Server running locally
+- Apache Commons Collections v4
+- Eclipse IDE (recommended) or any Java IDE
 
 ---
 
-## 📊 OLAP Analysis
+### 🧱 Steps to Run
 
-Several analytical SQL queries are performed on the DW:
+1. **Create the Schema**
+   - Use the `createDW.sql` file to create all dimension and fact tables under schema `ELECTRONICA_DW`.
 
-### 🔍 Sample Queries
+2. **Load Raw Data**
+   - Load `transactions.csv` into a staging table named `transactions`.
+   - Load `master_data.csv` into a staging table named `masterdata`.
 
-- **Q1. Drill-down:**  
-  Total sales per supplier by quarter and month using `GROUPING SETS`.
+3. **Compile and Run**
+   - Open project in Eclipse.
+   - Add Apache Commons Collections v4 JAR file to the project build path.
+   - Run the `electronica_dw.java` file.
+   - Enter:
+     - MySQL **username**
+     - **password**
+     - **schema name** (should be `ELECTRONICA_DW`)
 
-- **Q2. Roll-up & Dicing:**  
-  Sales by product/month filtered for supplier "DJI" using `ROLLUP`.
-
-- **Q3. Top 5 Products on Weekends:**  
-  Sales grouped by product for `DAYOFWEEK` = 1 or 7.
-
-- **Q4. Quarterly and Yearly Product Sales:**  
-  Uses `SUM(...) OVER(PARTITION BY ...)`.
-
-- **Q5. Anomaly Detection:**  
-  Identify outliers based on unexpected sales patterns.
-
-- **Materialized Views:**
-  - `STOREANALYSIS_MV`: Product-wise sales by store.
-  - `SUPPLIER_PERFORMANCE_MV`: Supplier performance over months.
-  - `CUSTOMER_STORE_SALES_MV`: Monthly sales by customer/store.
+> The system will read 1000+ records, enrich them with master data in partitions, and load all enriched tuples into the DW schema.
 
 ---
 
-## 📌 Notes
+## 📊 Data Warehouse Design
 
-- Ensure correct data types when importing CSVs.
-- For date operations (`YEAR`, `MONTH`, `DAYOFWEEK`), the `DATE_ID` must be in a parsable date format.
-- OLAP operations require well-indexed tables for performance.
+### 🟨 Fact Table
+- `FACTS`: Holds enriched sales transactions with references to dimension tables
 
----
-
-## 📚 Technologies Used
-
-- **Database:** MySQL
-- **ETL Language:** Java (Multithreaded)
-- **SQL Features:** Star-schema design, `GROUPING SETS`, `ROLLUP`, `WINDOW FUNCTIONS`, `MATERIALIZED VIEWS`
+### 🟦 Dimension Tables
+- `PRODUCTS`, `CUSTOMERS`, `ORDERS`, `SUPPLIERS`, `DATES`, `STORES`
 
 ---
 
-## 🧠 Learning Outcomes
+## 📈 OLAP Queries
 
-- Implemented real-time ETL using a custom algorithm.
-- Designed and normalized a data warehouse schema.
-- Practiced advanced SQL aggregation and multidimensional analysis.
-- Understood tradeoffs in real-time vs batch processing pipelines.
+Once the data is loaded, OLAP queries (in `queriesDW.sql`) allow analysis such as:
+- Supplier-wise quarterly sales
+- Most popular products
+- Roll-up, drill-down, slicing, and dicing by store/product/date
+- Materialized views for performance
 
 ---
 
-## 📁 Project Submission
-
-- `createDW.sql` – Schema + table creation script
-- `ETL/` – Java source code implementing multithreaded ETL
-- `queriesDW.sql` – All OLAP queries
-- `report.docx` – Full project write-up
-- `readMe.txt` – Step-by-step instructions
-
+## 📁 Project Structure
 
