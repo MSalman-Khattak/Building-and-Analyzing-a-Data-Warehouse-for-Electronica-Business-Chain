@@ -1,0 +1,21 @@
+# Required tools and libraries to build/run the project
+
+# Java Dependencies (not Python-based)
+Apache Commons Collections
+Apache MultiHashMap
+MySQL Connector/J
+JDK 1.8+
+
+# MySQL Setup
+MySQL Server (v8 or compatible)
+MySQL Workbench (optional, for GUI)
+
+# CSV Libraries (for Java, if applicable)
+OpenCSV or similar (optional)
+
+# IDE
+Eclipse IDE (preferred)
+OR IntelliJ IDEA
+
+# Optional
+Git (for version control)
