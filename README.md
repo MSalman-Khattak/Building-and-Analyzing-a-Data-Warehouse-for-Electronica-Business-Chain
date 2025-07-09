@@ -85,5 +85,3 @@ Once the data is loaded, OLAP queries (in `queriesDW.sql`) allow analysis such a
 
 ---
 
-## 📁 Project Structure
-
